@@ -1212,7 +1212,7 @@ function CaptureCard({
               <SelectItem value="chromium" disabled={!supportsChromium}>
                 {t('settings.capture_chromium_option')}
               </SelectItem>
-              <SelectItem value="external" disabled={draft.platform.kind !== 'majsoul'}>
+              <SelectItem value="external" disabled={draft.platform.kind !== 'Majsoul'}>
                 {t('settings.capture_external_option')}
               </SelectItem>
             </SelectContent>

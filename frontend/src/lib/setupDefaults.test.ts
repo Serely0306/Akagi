@@ -43,6 +43,12 @@ function makeConfig(over: {
         force_cft: false,
         extra_args: [],
       },
+      external: {
+        enabled: false,
+        bind_addr: '127.0.0.1:32123',
+        auth_token: '',
+        max_message_bytes: 1024 * 1024,
+      },
     },
     autoplay: {
       enabled: false,
