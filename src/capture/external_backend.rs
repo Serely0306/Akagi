@@ -298,11 +298,9 @@ async fn handle_connection(
     let callback = move |request: &Request, response: Response| {
         authorize_upgrade(request, &token).map(|()| response)
     };
-    let config = WebSocketConfig {
-        max_message_size: Some(max_message_bytes),
-        max_frame_size: Some(max_message_bytes),
-        ..Default::default()
-    };
+    let config = WebSocketConfig::default()
+        .max_message_size(Some(max_message_bytes))
+        .max_frame_size(Some(max_message_bytes));
     let mut socket = accept_hdr_async_with_config(stream, callback, Some(config))
         .await
         .context("external capture WebSocket upgrade failed")?;
