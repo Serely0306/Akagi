@@ -287,6 +287,8 @@ impl CaptureBackend for ExternalBackend {
     }
 }
 
+// tungstenite's Callback contract fixes the error type to a full HTTP response.
+#[allow(clippy::result_large_err)]
 async fn handle_connection(
     stream: TcpStream,
     expected_token: &str,
@@ -328,6 +330,7 @@ async fn handle_connection(
     }
 }
 
+#[allow(clippy::result_large_err)]
 fn authorize_upgrade(request: &Request, expected_token: &str) -> Result<(), ErrorResponse> {
     if request.uri().path() != CAPTURE_PATH {
         return Err(rejection(http::StatusCode::NOT_FOUND, "not found"));
