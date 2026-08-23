@@ -1133,6 +1133,12 @@ function CaptureCard({
     force_cft: false,
     extra_args: [],
   }
+  const external = draft.capture?.external ?? {
+    enabled: false,
+    bind_addr: '127.0.0.1:32123',
+    auth_token: '',
+    max_message_bytes: 1024 * 1024,
+  }
   const [detected, setDetected] = useState<DetectedBrowser[] | null>(null)
   const [detecting, setDetecting] = useState(false)
 
@@ -1160,16 +1166,30 @@ function CaptureCard({
     setDraft({
       ...draft,
       capture: {
+        ...draft.capture,
         mode: v,
         chromium,
+        external,
       },
     })
   const setChromium = (patch: Partial<typeof chromium>) =>
     setDraft({
       ...draft,
       capture: {
+        ...draft.capture,
         mode,
         chromium: { ...chromium, ...patch },
+        external,
+      },
+    })
+  const setExternal = (patch: Partial<typeof external>) =>
+    setDraft({
+      ...draft,
+      capture: {
+        ...draft.capture,
+        mode,
+        chromium,
+        external: { ...external, ...patch },
       },
     })
 
@@ -1191,6 +1211,9 @@ function CaptureCard({
               <SelectItem value="mitm">{t('settings.capture_mitm_option')}</SelectItem>
               <SelectItem value="chromium" disabled={!supportsChromium}>
                 {t('settings.capture_chromium_option')}
+              </SelectItem>
+              <SelectItem value="external" disabled={draft.platform.kind !== 'majsoul'}>
+                {t('settings.capture_external_option')}
               </SelectItem>
             </SelectContent>
           </Select>
@@ -1280,6 +1303,31 @@ function CaptureCard({
               onChange={(v) => setChromium({ force_cft: v })}
             />
             <CftPanel chromium={chromium} setChromium={setChromium} />
+          </>
+        )}
+
+        {mode === 'external' && (
+          <>
+            <Toggle
+              label={t('settings.external_enabled')}
+              value={external.enabled}
+              onChange={(enabled) => setExternal({ enabled })}
+            />
+            <Field label={t('settings.external_bind_addr')} hint={t('settings.external_bind_addr_hint')}>
+              <Input
+                value={external.bind_addr}
+                onChange={(event) => setExternal({ bind_addr: event.target.value })}
+                placeholder="0.0.0.0:32123"
+              />
+            </Field>
+            <Field label={t('settings.external_auth_token')} hint={t('settings.external_auth_token_hint')}>
+              <Input
+                type="password"
+                autoComplete="new-password"
+                value={external.auth_token}
+                onChange={(event) => setExternal({ auth_token: event.target.value })}
+              />
+            </Field>
           </>
         )}
       </CardContent>

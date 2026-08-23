@@ -132,6 +132,7 @@ pub enum BotStatus {
 pub enum CaptureKind {
     Mitm,
     Chromium,
+    External,
 }
 
 /// Lifecycle of the active capture backend.
@@ -415,6 +416,17 @@ mod tests {
         assert!(j.contains(r#""kind":"chromium""#));
         let back: CaptureStatus = serde_json::from_str(&j).unwrap();
         assert_eq!(back, s);
+    }
+
+    #[test]
+    fn capture_status_external_running() {
+        let s = CaptureStatus::Running {
+            kind: CaptureKind::External,
+            descriptor: "0.0.0.0:32123".into(),
+        };
+        let j = serde_json::to_string(&s).unwrap();
+        assert!(j.contains(r#""kind":"external""#));
+        assert_eq!(serde_json::from_str::<CaptureStatus>(&j).unwrap(), s);
     }
 
     #[test]

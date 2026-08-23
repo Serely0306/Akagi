@@ -1,18 +1,22 @@
 //! Capture-mode configuration: which transport supplies WebSocket frames
 //! to the bridge layer.
 //!
-//! Two modes:
+//! Three modes:
 //! - `Mitm` (default): hudsucker MITM proxy — see `[proxy]`.
 //! - `Chromium`: a Chromium browser launched and controlled by Akagi via
 //!   the Chrome DevTools Protocol.
+//! - `External`: an authenticated LAN WebSocket accepting Majsoul frames
+//!   captured by another process (for example MajsoulMax-rs on Android).
 
 use serde::{Deserialize, Serialize};
+use std::fmt;
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct CaptureConfig {
     pub mode: CaptureMode,
     pub chromium: ChromiumConfig,
+    pub external: ExternalCaptureConfig,
     pub http: HttpCaptureConfig,
 }
 
@@ -75,6 +79,51 @@ pub enum CaptureMode {
     #[default]
     Mitm,
     Chromium,
+    External,
+}
+
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct ExternalCaptureConfig {
+    /// Separate safety switch. Selecting external mode is not enough to
+    /// expose a listener until this is explicitly enabled.
+    pub enabled: bool,
+    /// Listener address. Loopback is the safe default; LAN use must opt into
+    /// a wildcard or specific private-interface address.
+    pub bind_addr: String,
+    /// Bearer token required during the WebSocket upgrade.
+    pub auth_token: String,
+    /// Upper bound for one JSON WebSocket message and its decoded payload.
+    pub max_message_bytes: usize,
+}
+
+impl Default for ExternalCaptureConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            bind_addr: "127.0.0.1:32123".to_string(),
+            auth_token: String::new(),
+            max_message_bytes: 1024 * 1024,
+        }
+    }
+}
+
+impl fmt::Debug for ExternalCaptureConfig {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("ExternalCaptureConfig")
+            .field("enabled", &self.enabled)
+            .field("bind_addr", &self.bind_addr)
+            .field(
+                "auth_token",
+                &if self.auth_token.is_empty() {
+                    "<empty>"
+                } else {
+                    "<redacted>"
+                },
+            )
+            .field("max_message_bytes", &self.max_message_bytes)
+            .finish()
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -122,6 +171,7 @@ mod tests {
         let back: CaptureConfig = toml::from_str(&s).unwrap();
         assert_eq!(back.mode, CaptureMode::Mitm);
         assert_eq!(back.chromium.cft_channel, "stable");
+        assert!(!back.external.enabled);
     }
 
     #[test]
@@ -129,6 +179,7 @@ mod tests {
         let cfg = CaptureConfig {
             mode: CaptureMode::Chromium,
             chromium: Default::default(),
+            external: Default::default(),
             http: Default::default(),
         };
         let s = toml::to_string(&cfg).unwrap();
@@ -164,6 +215,7 @@ mod tests {
                 force_cft: true,
                 extra_args: vec!["--lang=ja".into()],
             },
+            external: Default::default(),
             http: Default::default(),
         };
         let s = toml::to_string(&original).unwrap();
@@ -185,5 +237,25 @@ mod tests {
         let s = "";
         let w: Wrap = toml::from_str(s).unwrap();
         assert_eq!(w.capture.mode, CaptureMode::Mitm);
+    }
+
+    #[test]
+    fn external_config_round_trips_and_debug_redacts_token() {
+        let cfg = CaptureConfig {
+            mode: CaptureMode::External,
+            external: ExternalCaptureConfig {
+                enabled: true,
+                bind_addr: "0.0.0.0:32123".into(),
+                auth_token: "test-token-not-real".into(),
+                max_message_bytes: 2048,
+            },
+            ..Default::default()
+        };
+        let body = toml::to_string(&cfg).unwrap();
+        let back: CaptureConfig = toml::from_str(&body).unwrap();
+        assert_eq!(back, cfg);
+        let debug = format!("{:?}", cfg.external);
+        assert!(debug.contains("<redacted>"));
+        assert!(!debug.contains("test-token-not-real"));
     }
 }

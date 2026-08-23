@@ -11,6 +11,7 @@
 //! into the platform bridge, which emits mjai events on [`crate::event_bus::MjaiBus`].
 
 pub mod chromium;
+pub mod external_backend;
 pub mod flow;
 pub mod http;
 pub mod hudsucker_backend;
@@ -32,6 +33,7 @@ use tokio::sync::Notify;
 pub enum CaptureKind {
     Mitm,
     Chromium,
+    External,
 }
 
 impl CaptureKind {
@@ -39,6 +41,7 @@ impl CaptureKind {
         match self {
             CaptureKind::Mitm => "mitm",
             CaptureKind::Chromium => "chromium",
+            CaptureKind::External => "external",
         }
     }
 }

@@ -1,7 +1,7 @@
 # Capture Module
 
 `crate::capture` is the transport layer that supplies binary WebSocket
-frames to `crate::bridge::Bridge` (the protocol parser). Two backends
+frames to `crate::bridge::Bridge` (the protocol parser). Three backends
 share one trait so the rest of the app — bot manager, game tracker,
 analysis runner, IPC forwarders — never sees which capture mode is
 running.
@@ -14,8 +14,11 @@ running.
 - **`chromium::ChromiumBackend`** — Launches a Chromium-family browser
   with `--user-data-dir=<our profile>` and intercepts WebSocket frames
   via the Chrome DevTools Protocol. No proxy / CA setup.
+- **`external_backend::ExternalBackend`** — Listens for versioned,
+  bearer-authenticated JSON WebSocket messages from an external Majsoul
+  capture source. Each external session id owns one `Bridge` instance.
 
-Both implement `CaptureBackend`:
+All implement `CaptureBackend`:
 
 ```rust
 #[async_trait]
@@ -52,8 +55,8 @@ existing platform bridge.
 
 ```
 hudsucker WS event ─┐
-                    ├─→ FlowBridges::acquire(K) ─→ Bridge::parse(dir, &bytes) ─→ MjaiBus
-CDP frame event   ─┘
+CDP frame event     ├─→ FlowBridges::acquire(K) ─→ Bridge::parse(dir, &bytes) ─→ MjaiBus
+external LAN frame ─┘
 ```
 
 `FlowBridges<K>` is in `flow.rs`; both backends use it identically.

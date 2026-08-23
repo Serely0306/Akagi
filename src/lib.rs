@@ -109,7 +109,11 @@ pub fn run() {
     info!("History store at {}", history_root.display());
 
     let bot_enabled = cfg.bot.enabled;
-    let proxy_enabled = cfg.proxy.enabled;
+    let capture_enabled = match cfg.capture.mode {
+        config::CaptureMode::External => cfg.capture.external.enabled,
+        // Preserve the existing master-switch behaviour for MITM/Chromium.
+        config::CaptureMode::Mitm | config::CaptureMode::Chromium => cfg.proxy.enabled,
+    };
     let autoplay_enabled = cfg.autoplay.enabled;
     let overlay_cfg = cfg.overlay.clone();
 
@@ -334,7 +338,7 @@ pub fn run() {
                     });
                 }
 
-                if proxy_enabled {
+                if capture_enabled {
                     let state_for_capture = state.clone();
                     tauri::async_runtime::spawn(async move {
                         if let Err(e) =

@@ -54,7 +54,7 @@ export type BotStatus =
   | { state: 'error'; bot: string; error: string }
   | { state: 'stopped'; bot: string }
 
-export type CaptureKind = 'mitm' | 'chromium'
+export type CaptureKind = 'mitm' | 'chromium' | 'external'
 
 export type CaptureStatus =
   | { state: 'stopped' }
@@ -70,7 +70,7 @@ export type Notification = {
   id?: string
 }
 
-export type CaptureMode = 'mitm' | 'chromium'
+export type CaptureMode = 'mitm' | 'chromium' | 'external'
 
 export type ChromiumConfig = {
   executable: string
@@ -81,9 +81,17 @@ export type ChromiumConfig = {
   extra_args: string[]
 }
 
+export type ExternalCaptureConfig = {
+  enabled: boolean
+  bind_addr: string
+  auth_token: string
+  max_message_bytes: number
+}
+
 export type CaptureConfig = {
   mode: CaptureMode
   chromium: ChromiumConfig
+  external: ExternalCaptureConfig
 }
 
 export type DetectedBrowser = {
